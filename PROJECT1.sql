@@ -47,6 +47,24 @@ SET
     MONTH_ID = EXTRACT(MONTH FROM ORDERDATE),
     YEAR_ID = EXTRACT(YEAR FROM ORDERDATE);
 --ex5
+--cách 1: IQR/BOXPLOT
+with twt_min_max_value as(
+SELECT Q1-1.5*IQR AS min_value,
+Q3+1.5*IQR as max_value
+from(
+select
+percentile_cont (0.25) WITHIN GROUP (ORDER BY QUANTITYORDERED) as Q1,
+percentile_cont (0.75) WITHIN GROUP (ORDER BY QUANTITYORDERED) as Q3,
+percentile_cont (0.75) WITHIN GROUP (ORDER BY QUANTITYORDERED) -percentile_cont (0.25) WITHIN GROUP (ORDER BY QUANTITYORDERED) as IQR
+from sales_dataset_rfm_prj) as a)
+--xác dinh outlier <min or >max
+select * from sales_dataset_rfm_prj
+where QUANTITYORDERED< (select min_value from twt_min_max_value)
+or QUANTITYORDERED> (select max_value from twt_min_max_value)
+--xóa những outlier
+DELETE FROM sales_dataset_rfm_prj
+where QUANTITYORDERED IN (SELECT QUANTITYORDERED from twt_outlier)
+--cách 2: Z-SCORE
 with cte as
 (
 select QUANTITYORDERED,
