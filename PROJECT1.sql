@@ -1,5 +1,7 @@
 --ex1
 alter table sales_dataset_rfm_prj
+alter COLUMN ordernumber type int USING(ordernumber::int);
+alter table sales_dataset_rfm_prj
 alter COLUMN quantityordered type int USING(quantityordered::int);
 alter table sales_dataset_rfm_prj
 alter COLUMN priceeach type numeric USING(priceeach::numeric);
