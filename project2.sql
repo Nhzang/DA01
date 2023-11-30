@@ -45,54 +45,7 @@ WITH YoungestCustomers AS (
     FROM 
         bigquery-public-data.thelook_ecommerce.users
     WHERE 
-        DATE(created_at) >= '2019-01-01' AND DATE(created_at) <= '2022-04-30'
-        AND age = (
-            SELECT 
-                MIN(age)
-            FROM 
-                bigquery-public-data.thelook_ecommerce.users as sub
-           
-        )
-),
-OldestCustomers AS (
-    SELECT 
-        first_name,
-        last_name,
-        gender,
-        age,
-        'oldest' AS tag
-    FROM 
-        bigquery-public-data.thelook_ecommerce.users
-    WHERE 
-        DATE(created_at) >= '2019-01-01' AND DATE(created_at) <= '2022-04-30'
-        AND age = (
-            SELECT 
-                MAX(age)
-            FROM 
-                bigquery-public-data.thelook_ecommerce.users as sub
-          
-        )
-)
-
-SELECT 
-    first_name,
-    last_name,
-    gender,
-    age,
-    tag
-FROM 
-    YoungestCustomers --1115
-
-UNION ALL
-
-SELECT 
-    first_name,
-    last_name,
-    gender,
-    age, --1150
-    tag
-FROM  OldestCustomers
-ORDER BY age
+        DATE(created_at) >= '2019-01-01' Agender
 /*Insight: Người trẻ nhất là 12 tuổi, số lượng: 1115 
            Người già nhất là 70 tuổi, số lượng: 1150 */
 --ex4
