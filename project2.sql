@@ -1,22 +1,22 @@
 --ex1
 SELECT 
-    concat(extract(MONTH from created_at),'-',extract(YEAR from created_at)) AS year_month,
+    CONCAT(EXTRACT(MONTH FROM created_at),'-',EXTRACT(YEAR FROM created_at)) AS year_month,
     COUNT(DISTINCT user_id) AS total_users,
-    COUNT(order_id) AS total_orders
+    COUNT(order_id) AS total_orders,
+    COUNT(CASE WHEN status = 'Complete' THEN order_id END) AS completed_orders
 FROM 
     bigquery-public-data.thelook_ecommerce.order_items
 WHERE 
     DATE(created_at) >= '2019-01-01' AND DATE(created_at) <= '2022-04-30'
 GROUP BY 1
-ORDER BY  total_orders;
+ORDER BY total_orders;
 /*Insight: lượng người mua và số lượng đơn hàng tăng theo từng tháng8*/
 --ex2
 WITH MonthlyOrders AS (
     SELECT 
         concat(extract(MONTH from created_at),'-',extract(YEAR from created_at)) AS year_month,
         COUNT(DISTINCT user_id) AS distinct_users,
-        SUM(sale_price) AS total_sales,
-        COUNT(order_id) AS total_orders
+        AVG(sale_price) as  average_order_value
     FROM 
         bigquery-public-data.thelook_ecommerce.order_items
     WHERE 
@@ -27,7 +27,7 @@ WITH MonthlyOrders AS (
 SELECT 
     year_month,
     distinct_users,
-    IF(total_orders > 0, total_sales / total_orders, 0) AS average_order_value
+    average_order_value
 FROM 
     MonthlyOrders
 ORDER BY 
