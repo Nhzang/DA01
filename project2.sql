@@ -144,7 +144,8 @@ GROUP BY
 ORDER BY 
     dates , revenue desc;
 --II, Tạo metric trước khi dựng dashboard
-with cte as(
+--1, Tạo dataset
+    with cte as(
   select
   EXTRACT(MONTH FROM a.created_at) as month, EXTRACT(YEAR FROM a.created_at) AS year,
   c.category as Product_category, 
@@ -165,6 +166,67 @@ round(TPV-total_cost,4) as total_profit,
 round((TPV-total_cost)/total_cost,4) as Profit_to_cost_ratio
 from cte
 order by Product_category, year, month
+--2, Cohort_chart
+with cte1 as(
+SELECT 
+  user_id,
+	amount,
+	 FORMAT_DATE('%Y-%m', first_purchase_date) as cohort_month,
+	created_at,
+	(extract(year from created_at)-extract(year from first_purchase_date))*12
+	+(extract(month from created_at)-extract(month from first_purchase_date))+1 as index
+FROM(
+	SELECT user_id,
+	round(sale_price,4) AS amount,
+MIN(created_at) over(PARTITION BY user_id) as first_purchase_date ,
+created_at
+from bigquery-public-data.thelook_ecommerce.order_items
+) a)
+,xxx as(
+SELECT 
+cohort_month,
+index,
+count(distinct user_id) as user_count,
+round(sum(amount),4) as revenue
+from cte1
+group by cohort_month, index),
+
+---CUSTOMER_COHORT
+customer_cohort as(
+select 
+cohort_month,
+sum(case when index=1 then user_count else 0 end ) as m1,
+sum(case when index=2 then user_count else 0 end ) as m2,
+sum(case when index=3 then user_count else 0 end ) as m3,
+sum(case when index=4 then user_count else 0 end ) as m4
+from xxx
+group by cohort_month
+order by cohort_month)
+--RETENTION COHORT
+,retention_cohort as(
+select cohort_month,
+concat(round(100.00*m1/m1,2),'%') as m1,
+concat(round(100.00*m2/m1,2),'%') as m2,
+concat(round(100.00*m3/m1,2),'%') as m3,
+concat(round(100.00*m4/m1,2),'%') as m4
+from customer_cohort
+)
+--CHURN COHORT
+select cohort_month,
+ concat(100.00-round(100.00*m1/m1,2),'%') as m1,
+ concat(100.00-round(100.00*m2/m1,2),'%') as m2,
+ concat(100.00-round(100.00*m3/m1,2),'%') as m3,
+ concat(100.00-round(100.00*m4/m1,2),'%') as m4
+ from customer_cohort
+--LINK Cohort_chart: https://docs.google.com/spreadsheets/d/1w9msL2pQgfPL50NTkJ42XpxUbnm09shbCHvyBrqBuio/edit?usp=sharing
+/* INSIGHT: - Tổng quan, mỗi tháng The Look đều có sự gia tăng về số lượng người dùng đây cũng có thể đánh giá là 1 tín hiệu tốt
+            - Tuy nhiên, tỉ lệ người dùng quay lại The Look là rất thấp kể từ ngày mua hàng đầu tiên (dưới 10% cho đến 8-2023 mới trên 10%)
+            - Song song với tỉ lệ trở lại thấp là tỉ lệ rời bỏ The Look cực kỳ cao hầu như chắc chắn người dùng sẽ rời bỏ sau khi sử dụng và mua hàng lần đầu tiên
+--> Do vậy, The Look cần có những giải pháp kịp thời ngay lập tức ví dụ như những chiến dịch marketing thu hút hơn, những tuần lễ giảm giá với đa dạng mặt hàng,... để có thể giữ chân khách hàng ở lại sử dụng dịch vụ
+
+
+
+
 
 
 
