@@ -143,6 +143,29 @@ GROUP BY
     dates,product_category
 ORDER BY 
     dates , revenue desc;
+--II, Tạo metric trước khi dựng dashboard
+with cte as(
+  select
+  EXTRACT(MONTH FROM a.created_at) as month, EXTRACT(YEAR FROM a.created_at) AS year,
+  c.category as Product_category, 
+  sum(b.sale_price) as TPV,
+  count(a.order_id) as TPO,
+  sum(c.cost) as total_cost
+  from bigquery-public-data.thelook_ecommerce.orders as a
+  join bigquery-public-data.thelook_ecommerce.order_items as b on b.order_id=a.order_id
+  join bigquery-public-data.thelook_ecommerce.products as c on c.id=b.id
+  group by month, year, Product_category
+)
+select
+month, year, Product_category,TPV,TPO,
+ROUND((TPV-lag(TPV) over (PARTITION BY Product_category ORDER BY year, month)/lag(TPV) over(partition by Product_category order by year,month)), 4) * 100 AS Revenue_ggrowth,
+ROUND((TPO-lag(TPO) over (PARTITION BY Product_category ORDER BY year, month)/lag(TPO) over(partition by Product_category order by year,month)), 4) * 100 AS Order_growth,
+total_cost,
+round(TPV-total_cost,4) as total_profit,
+round((TPV-total_cost)/total_cost,4) as Profit_to_cost_ratio
+from cte
+order by Product_category, year, month
+
 
 
 
