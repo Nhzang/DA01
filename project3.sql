@@ -1,4 +1,9 @@
 select*from public.sales_dataset_rfm_prj_clean
+CREATE TABLE segment_score
+(
+segment Varchar,
+ scores Varchar)
+
 --ex1
 SELECT productline, year_id, dealsize, SUM(sales) AS TotalRevenue
 FROM public.sales_dataset_rfm_prj_clean
