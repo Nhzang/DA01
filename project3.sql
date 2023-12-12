@@ -73,9 +73,16 @@ ntile(5) over (order by F DESC) as F_score,
 ntile(5) over (order by M DESC) as M_score
 from customer_rfm)
 --bước 3: phân nhóm 125 tổhopwj R-F-M
-	select ordernumber, customername,
-	concat(cast(R_score as varchar),cast(F_score as varchar),cast(M_score as varchar))
-	from rfm_score
+,rfm_final as (
+select ordernumber, customername,
+concat(cast(R_score as varchar),cast(F_score as varchar),cast(M_score as varchar)) as rfm_score
+from rfm_score)
+select segment, count(*) from(		   
+select a.ordernumber,a.customername,b.segment from rfm_final as a
+join segment_score as b on a.rfm_score=b.scores) as a
+group by segment
+order by count(*)
+--LINK BIỂU ĐỔ: https://docs.google.com/spreadsheets/d/11wiROwZDDgqTH57G1-OUsY4CoO5D7kKLkVSf4_BlW1A/edit?usp=sharing
 
 
 
